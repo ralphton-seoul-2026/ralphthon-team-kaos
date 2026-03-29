@@ -8,12 +8,36 @@ import { CHECKLIST_MIN, CHECKLIST_MAX } from '../core/constants.js';
 // Categories that are always included
 const ALWAYS_INCLUDED: CategoryCode[] = ['AUTH', 'NET', 'RT'];
 
+// Detect if duration qualifies as "long-running" (≥2 hours)
+function isLongRunningDuration(durationStr: string): boolean {
+  if (!durationStr) return false;
+  if (/밤새|overnight/i.test(durationStr)) return true;
+  const rangeMatch = durationStr.match(/(\d+)\s*[~\-]\s*(\d+)\s*시간/);
+  if (rangeMatch) return parseInt(rangeMatch[1], 10) >= 2;
+  const singleMatch = durationStr.match(/(\d+)\s*시간/);
+  if (singleMatch) return parseInt(singleMatch[1], 10) >= 2;
+  const hourEn = durationStr.match(/(\d+)\s*[~\-]?\s*(\d+)?\s*hour/i);
+  if (hourEn) return parseInt(hourEn[1], 10) >= 2;
+  return false;
+}
+
+// Compute dynamic max bound based on task complexity
+function getDynamicMax(seed: Seed): number {
+  const serviceCount = seed.external_services.length;
+  const isLongRunning = isLongRunningDuration(seed.estimated_duration);
+
+  if (serviceCount === 0 && !isLongRunning) return 20;      // simple local task
+  if (serviceCount <= 1 && !isLongRunning) return 30;        // single service
+  if (serviceCount >= 5) return CHECKLIST_MAX;                // complex multi-service
+  return CHECKLIST_MAX;                                       // default
+}
+
 // Rule-based category activation
 function getActiveCategories(seed: Seed): Set<CategoryCode> {
   const active = new Set<CategoryCode>(ALWAYS_INCLUDED);
 
   const hasExternalServices = seed.external_services.length > 0;
-  const isLongRunning = /시간|hour|밤새|overnight/i.test(seed.estimated_duration);
+  const isLongRunning = isLongRunningDuration(seed.estimated_duration);
   const serviceNames = seed.external_services.map(s => s.name.toLowerCase()).join(' ');
   const taskLower = seed.task_summary.toLowerCase();
 
@@ -23,7 +47,7 @@ function getActiveCategories(seed: Seed): Set<CategoryCode> {
     active.add('NET');
   }
 
-  // Long running → HW, OS, COST, MON
+  // Long running (≥2 hours) → HW, OS, COST, MON
   if (isLongRunning) {
     active.add('HW');
     active.add('OS');
@@ -435,7 +459,7 @@ export function generateChecklist(seed: Seed): ChecklistItem[] {
 
   // Apply risk score adjustments based on seed context
   const serviceCount = seed.external_services.length;
-  const isLongRunning = /시간|hour|밤새|overnight/i.test(seed.estimated_duration);
+  const isLongRunning = isLongRunningDuration(seed.estimated_duration);
 
   let items = Array.from(merged.values()).map(item => {
     let { likelihood } = item;
@@ -476,8 +500,9 @@ export function generateChecklist(seed: Seed): ChecklistItem[] {
     items = [...items, ...remaining];
   }
 
-  if (items.length > CHECKLIST_MAX) {
-    items = items.slice(0, CHECKLIST_MAX);
+  const dynamicMax = getDynamicMax(seed);
+  if (items.length > dynamicMax) {
+    items = items.slice(0, dynamicMax);
   }
 
   return items;
