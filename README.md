@@ -1,8 +1,32 @@
-# 🧪 Chaos Lab — AI 에이전트 Pre-flight Check
+<p align="center">
+  <br/>
+  ◈ ─────────────────── ◈
+  <br/><br/>
+  <img src="./docs/images/chaos-lab-logo.png" width="420" alt="Chaos Lab">
+  <br/><br/>
+  <strong>C H A O S &nbsp; L A B</strong>
+  <br/>
+  <sub>AI 에이전트 Pre-flight Check 시스템</sub>
+  <br/><br/>
+  ◈ ─────────────────── ◈
+  <br/>
+</p>
 
-> "밤새 돌린 크롤링이 3시간 만에 API 키 만료로 죽었다면?"
+<p align="center">
+  <strong>밤새 돌린 크롤링이 3시간 만에 API 키 만료로 죽었다면?</strong>
+  <br/>
+  <sub>AI 에이전트를 실행하기 <b>전에</b> 환경을 자동 검증하여 실패를 미리 방지하는 Pre-flight Check 시스템.</sub>
+</p>
 
-AI 에이전트를 실행하기 **전에** 환경을 자동 검증하여 실패를 미리 방지하는 Pre-flight Check 시스템입니다.
+<p align="center">
+  <a href="#설치-방법">설치</a> ·
+  <a href="#사용법">사용법</a> ·
+  <a href="#아키텍처-5단계-파이프라인">아키텍처</a> ·
+  <a href="#체크리스트-카테고리-11개-100개-항목">체크리스트</a> ·
+  <a href="#auto-fix">Auto-fix</a>
+</p>
+
+---
 
 ## Before / After
 
