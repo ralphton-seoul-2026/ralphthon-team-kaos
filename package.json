@@ -10,7 +10,11 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/cli/index.js",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "validate": "bash scripts/validate-all.sh",
+    "validate:scenario1": "bash scripts/validate-scenario1.sh",
+    "validate:scenario3": "bash scripts/validate-scenario3.sh",
+    "validate:scenario23": "bash scripts/validate-scenario23.sh"
   },
   "keywords": ["chaos-lab", "preflight", "agent", "verification"],
   "license": "MIT",
