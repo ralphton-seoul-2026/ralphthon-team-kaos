@@ -1,0 +1,26 @@
+{
+  "name": "chaos-lab",
+  "version": "1.0.0",
+  "description": "AI 에이전트 실행 전 환경을 자동 검증하는 Pre-flight Check 시스템",
+  "type": "module",
+  "main": "dist/cli/index.js",
+  "bin": {
+    "chaos-lab": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli/index.js",
+    "dev": "tsc --watch"
+  },
+  "keywords": ["chaos-lab", "preflight", "agent", "verification"],
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "execa": "^8.0.1",
+    "ora": "^8.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}
