@@ -32,11 +32,11 @@ const SYSTEM_PROMPT = `당신은 AI 에이전트 실행 전 환경 검증을 위
 
 export async function generateDeepSeed(prompt: string): Promise<Seed> {
   // 1. Check if claude CLI exists
-  const { execaCommand } = await import('execa');
+  const { execa } = await import('execa');
 
   let claudeAvailable = false;
   try {
-    const whichResult = await execaCommand('which claude', { shell: true, reject: false });
+    const whichResult = await execa('which', ['claude'], { reject: false });
     claudeAvailable = whichResult.exitCode === 0 && whichResult.stdout.trim().length > 0;
   } catch {
     claudeAvailable = false;
@@ -49,13 +49,10 @@ export async function generateDeepSeed(prompt: string): Promise<Seed> {
 
   // 2. Call claude CLI
   try {
-    const escapedSystem = SYSTEM_PROMPT.replace(/"/g, '\\"');
-    const escapedPrompt = prompt.replace(/"/g, '\\"');
-
-    const result = await execaCommand(
-      `claude --print -p "${escapedSystem}" "${escapedPrompt}"`,
-      { shell: true, timeout: 60000, reject: false }
-    );
+    const result = await execa('claude', ['-p', '--output-format', 'text', '--system-prompt', SYSTEM_PROMPT, prompt], {
+      timeout: 120000,
+      reject: false,
+    });
 
     if (result.exitCode !== 0 || !result.stdout.trim()) {
       console.error('Deep Mode 사용 불가, Quick Mode로 전환');
