@@ -3,9 +3,9 @@
 import type { Report, Seed, ChecklistItem } from '../core/types.js';
 
 export function generateHtmlTemplate(report: Report, checklist: ChecklistItem[], seed: Seed): string {
-  const reportJson = JSON.stringify(report);
-  const checklistJson = JSON.stringify(checklist);
-  const seedJson = JSON.stringify(seed);
+  const reportJson = JSON.stringify(report).replace(/</g, '\u003c');
+  const checklistJson = JSON.stringify(checklist).replace(/</g, '\u003c');
+  const seedJson = JSON.stringify(seed).replace(/</g, '\u003c');
 
   return `<!DOCTYPE html>
 <html lang="ko">
@@ -153,6 +153,34 @@ tr:hover { background: var(--bg-secondary); }
 .collapsible-item { padding: 12px 16px; border-bottom: 1px solid var(--border); }
 .collapsible-item:last-child { border-bottom: none; }
 
+/* Expand/Collapse buttons */
+.expand-collapse-btns { display: flex; gap: 8px; margin-bottom: 12px; }
+.expand-btn {
+  padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--bg-secondary); color: var(--text-secondary);
+  cursor: pointer; font-size: 13px; transition: all 0.2s;
+}
+.expand-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+
+/* Details truncation toggle */
+.details-short { display: inline; }
+.details-full { display: none; }
+.details-toggle { color: var(--accent-blue); cursor: pointer; font-size: 12px; margin-left: 4px; }
+.details-expanded .details-short { display: none; }
+.details-expanded .details-full { display: inline; }
+
+/* Table sortable */
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--accent-blue); }
+th.sortable .sort-arrow { margin-left: 4px; opacity: 0.5; font-size: 11px; }
+th.sortable.sort-asc .sort-arrow, th.sortable.sort-desc .sort-arrow { opacity: 1; color: var(--accent-blue); }
+
+/* KPI progress bar */
+.kpi-bar { margin-top: 10px; height: 6px; border-radius: 3px; background: var(--bg-tertiary); overflow: hidden; display: flex; }
+.kpi-bar-pass { background: var(--accent-green); height: 100%; }
+.kpi-bar-fail { background: var(--accent-red); height: 100%; }
+.kpi-bar-warn { background: var(--accent-yellow); height: 100%; }
+
 /* Action Plan */
 .action-item {
   background: var(--bg-secondary); border: 1px solid var(--border);
@@ -211,6 +239,12 @@ const SEED = ${seedJson};
   let currentFilter = 'ALL';
   let searchTerm = '';
 
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
   function render() {
     app.innerHTML = renderOverview() + renderChecklist() + renderVerify() + renderReport();
     bindEvents();
@@ -223,20 +257,26 @@ const SEED = ${seedJson};
     return '<div id="section-overview" class="section-page">' +
       '<div class="hero"><h1>🧪 Chaos Lab</h1><p class="subtitle">Pre-flight Check Report</p></div>' +
       '<div class="verdict-banner ' + verdictClass + '">' + v.summary + '</div>' +
-      '<div class="kpi-grid">' +
-        '<div class="kpi-card kpi-critical"><div class="number">' + v.failed_count + '</div><div class="label">Critical</div></div>' +
-        '<div class="kpi-card kpi-warning"><div class="number">' + v.warning_count + '</div><div class="label">Warning</div></div>' +
-        '<div class="kpi-card kpi-passed"><div class="number">' + v.passed_count + '</div><div class="label">Passed</div></div>' +
-        '<div class="kpi-card kpi-skipped"><div class="number">' + v.skipped_count + '</div><div class="label">Skipped</div></div>' +
-        '<div class="kpi-card kpi-healed"><div class="number">' + v.healed_count + '</div><div class="label">Healed</div></div>' +
-      '</div>' +
+      (function() {
+        var total = v.failed_count + v.warning_count + v.passed_count + v.skipped_count + v.healed_count;
+        var pPass = total > 0 ? Math.round(v.passed_count / total * 100) : 0;
+        var pFail = total > 0 ? Math.round(v.failed_count / total * 100) : 0;
+        var pWarn = total > 0 ? Math.round(v.warning_count / total * 100) : 0;
+        return '<div class="kpi-grid">' +
+          '<div class="kpi-card kpi-critical"><div class="number">' + v.failed_count + '</div><div class="label">Critical</div><div class="kpi-bar"><div class="kpi-bar-fail" style="width:' + pFail + '%"></div></div></div>' +
+          '<div class="kpi-card kpi-warning"><div class="number">' + v.warning_count + '</div><div class="label">Warning</div><div class="kpi-bar"><div class="kpi-bar-warn" style="width:' + pWarn + '%"></div></div></div>' +
+          '<div class="kpi-card kpi-passed"><div class="number">' + v.passed_count + '</div><div class="label">Passed</div><div class="kpi-bar"><div class="kpi-bar-pass" style="width:' + pPass + '%"></div></div></div>' +
+          '<div class="kpi-card kpi-skipped"><div class="number">' + v.skipped_count + '</div><div class="label">Skipped</div></div>' +
+          '<div class="kpi-card kpi-healed"><div class="number">' + v.healed_count + '</div><div class="label">Healed</div></div>' +
+        '</div>';
+      })() +
       '<div class="cta-group">' +
         '<button class="cta-btn cta-primary" onclick="showSection(\\'verify\\')">검증 결과 보기</button>' +
         '<button class="cta-btn cta-secondary" onclick="showSection(\\'report\\')">Action Plan 보기</button>' +
       '</div>' +
       '<div class="info-panel">' +
         '<h3 style="margin-bottom:12px">System Info</h3>' +
-        '<div class="info-row"><span class="info-label">작업 요약</span><span class="info-value">' + SEED.task_summary.substring(0,80) + '</span></div>' +
+        '<div class="info-row"><span class="info-label">작업 요약</span><span class="info-value">' + escapeHtml(SEED.task_summary.substring(0,80)) + '</span></div>' +
         '<div class="info-row"><span class="info-label">외부 서비스</span><span class="info-value">' + (SEED.external_services.map(function(s){return s.name}).join(', ') || '없음') + '</span></div>' +
         '<div class="info-row"><span class="info-label">예상 소요시간</span><span class="info-value">' + SEED.estimated_duration + '</span></div>' +
         '<div class="info-row"><span class="info-label">모호도</span><span class="info-value">' + SEED.ambiguity_score + '</span></div>' +
@@ -259,10 +299,10 @@ const SEED = ${seedJson};
         '<div class="kpi-card"><div class="number">' + highest + '</div><div class="label">Highest Risk</div></div>' +
       '</div>' +
       '<input type="text" class="search-box" id="checklist-search" placeholder="검색..." />' +
-      '<div class="table-container"><table><thead><tr><th>ID</th><th>카테고리</th><th>설명</th><th>Risk</th><th>소스</th></tr></thead><tbody id="checklist-body">';
+      '<div class="table-container"><table id="checklist-table"><thead><tr><th>ID</th><th>카테고리</th><th>설명</th><th class="sortable" id="risk-th" onclick="sortByRisk()">Risk <span class="sort-arrow">↕</span></th><th>소스</th></tr></thead><tbody id="checklist-body">';
 
     CHECKLIST.forEach(function(c) {
-      html += '<tr class="checklist-row" data-cat="' + c.category + '"><td>' + c.item_id + '</td><td>' + (catNames[c.category]||c.category) + '</td><td>' + c.description + '</td><td>' + c.risk_score + '</td><td>' + c.source + '</td></tr>';
+      html += '<tr class="checklist-row" data-cat="' + c.category + '"><td>' + escapeHtml(c.item_id) + '</td><td>' + (catNames[c.category]||c.category) + '</td><td>' + escapeHtml(c.description) + '</td><td>' + c.risk_score + '</td><td>' + c.source + '</td></tr>';
     });
 
     html += '</tbody></table></div></div></div>';
@@ -278,13 +318,20 @@ const SEED = ${seedJson};
 
     var html = '<div id="section-verify" class="section-page" style="display:none">' +
       '<div class="section"><h2>🔍 Verification Results</h2>' +
-      '<div class="kpi-grid">' +
-        '<div class="kpi-card kpi-critical"><div class="number">' + REPORT.verdict.failed_count + '</div><div class="label">Critical</div></div>' +
-        '<div class="kpi-card kpi-warning"><div class="number">' + REPORT.verdict.warning_count + '</div><div class="label">Warning</div></div>' +
-        '<div class="kpi-card kpi-passed"><div class="number">' + REPORT.verdict.passed_count + '</div><div class="label">Passed</div></div>' +
-        '<div class="kpi-card kpi-skipped"><div class="number">' + REPORT.verdict.skipped_count + '</div><div class="label">Skipped</div></div>' +
-        '<div class="kpi-card kpi-healed"><div class="number">' + REPORT.verdict.healed_count + '</div><div class="label">Healed</div></div>' +
-      '</div>' +
+      (function() {
+        var vv = REPORT.verdict;
+        var total = vv.failed_count + vv.warning_count + vv.passed_count + vv.skipped_count + vv.healed_count;
+        var pPass = total > 0 ? Math.round(vv.passed_count / total * 100) : 0;
+        var pFail = total > 0 ? Math.round(vv.failed_count / total * 100) : 0;
+        var pWarn = total > 0 ? Math.round(vv.warning_count / total * 100) : 0;
+        return '<div class="kpi-grid">' +
+          '<div class="kpi-card kpi-critical"><div class="number">' + vv.failed_count + '</div><div class="label">Critical</div><div class="kpi-bar"><div class="kpi-bar-fail" style="width:' + pFail + '%"></div></div></div>' +
+          '<div class="kpi-card kpi-warning"><div class="number">' + vv.warning_count + '</div><div class="label">Warning</div><div class="kpi-bar"><div class="kpi-bar-warn" style="width:' + pWarn + '%"></div></div></div>' +
+          '<div class="kpi-card kpi-passed"><div class="number">' + vv.passed_count + '</div><div class="label">Passed</div><div class="kpi-bar"><div class="kpi-bar-pass" style="width:' + pPass + '%"></div></div></div>' +
+          '<div class="kpi-card kpi-skipped"><div class="number">' + vv.skipped_count + '</div><div class="label">Skipped</div></div>' +
+          '<div class="kpi-card kpi-healed"><div class="number">' + vv.healed_count + '</div><div class="label">Healed</div></div>' +
+        '</div>';
+      })() +
       '<div class="filters">' +
         '<button class="filter-btn active" data-filter="ALL">All</button>' +
         '<button class="filter-btn" data-filter="FAILED">Failed</button>' +
@@ -292,6 +339,11 @@ const SEED = ${seedJson};
         '<button class="filter-btn" data-filter="PASSED">Passed</button>' +
         '<button class="filter-btn" data-filter="SKIPPED">Skipped</button>' +
         '<button class="filter-btn" data-filter="HEALED">Healed</button>' +
+      '</div>' +
+      '<input type="text" class="search-box" id="verify-search" placeholder="검증 결과 검색..." />' +
+      '<div class="expand-collapse-btns">' +
+        '<button class="expand-btn" onclick="expandAll()">모두 펼치기</button>' +
+        '<button class="expand-btn" onclick="collapseAll()">모두 접기</button>' +
       '</div>';
 
     Object.keys(byCat).forEach(function(cat) {
@@ -309,8 +361,14 @@ const SEED = ${seedJson};
             '<strong>' + r.item_id + '</strong>' +
             '<span class="badge badge-' + r.status + '">' + r.status + '</span>' +
           '</div>' +
-          '<div style="margin-top:4px">' + r.description + '</div>' +
-          '<div style="margin-top:4px;color:var(--text-secondary);font-size:13px">' + r.details.substring(0,120) + '</div>' +
+          '<div style="margin-top:4px">' + escapeHtml(r.description) + '</div>' +
+          '<div style="margin-top:4px;color:var(--text-secondary);font-size:13px" class="details-wrap">' +
+            (r.details.length > 120
+              ? '<span class="details-short">' + r.details.substring(0,120) + '...</span>' +
+                '<span class="details-full">' + r.details + '</span>' +
+                '<span class="details-toggle" onclick="toggleDetails(this)">더 보기</span>'
+              : r.details) +
+          '</div>' +
         '</div>';
       });
       html += '</div></div>';
@@ -333,9 +391,9 @@ const SEED = ${seedJson};
       REPORT.action_plan.forEach(function(a) {
         var typeIcon = a.fix_type === 'auto-fixable' ? '🔧' : '👤';
         html += '<div class="action-item">' +
-          '<div class="action-header"><span>' + typeIcon + '</span><strong>' + a.item_id + '</strong><span> — ' + a.description + '</span></div>' +
-          '<div class="action-reason">' + a.reason + '</div>' +
-          '<code>' + a.fix_command + '</code>' +
+          '<div class="action-header"><span>' + typeIcon + '</span><strong>' + escapeHtml(a.item_id) + '</strong><span> — ' + escapeHtml(a.description) + '</span></div>' +
+          '<div class="action-reason">' + escapeHtml(a.reason) + '</div>' +
+          '<code>' + escapeHtml(a.fix_command) + '</code>' +
         '</div>';
       });
     } else {
@@ -346,20 +404,31 @@ const SEED = ${seedJson};
     return html;
   }
 
+  var verifySearchTerm = '';
+  var riskSortDir = 'none';
+
   function bindEvents() {
     var searchBox = document.getElementById('checklist-search');
     if (searchBox) {
       searchBox.addEventListener('input', function(e) {
-        searchTerm = e.target.value.toLowerCase();
+        searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
         filterChecklist();
+      });
+    }
+
+    var verifySearch = document.getElementById('verify-search');
+    if (verifySearch) {
+      verifySearch.addEventListener('input', function(e) {
+        verifySearchTerm = (e.target as HTMLInputElement).value.toLowerCase();
+        filterVerify();
       });
     }
 
     document.querySelectorAll('.filter-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
         document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        currentFilter = btn.dataset.filter;
+        (btn as HTMLElement).classList.add('active');
+        currentFilter = (btn as HTMLElement).dataset.filter || 'ALL';
         filterVerify();
       });
     });
@@ -367,23 +436,29 @@ const SEED = ${seedJson};
 
   function filterChecklist() {
     document.querySelectorAll('.checklist-row').forEach(function(row) {
-      var text = row.textContent.toLowerCase();
-      row.style.display = text.includes(searchTerm) ? '' : 'none';
+      var text = (row as HTMLElement).textContent.toLowerCase();
+      (row as HTMLElement).style.display = text.includes(searchTerm) ? '' : 'none';
     });
   }
 
   function filterVerify() {
     document.querySelectorAll('.verify-item').forEach(function(item) {
-      if (currentFilter === 'ALL' || item.dataset.status === currentFilter) {
-        item.style.display = '';
-      } else {
-        item.style.display = 'none';
-      }
+      var el = item as HTMLElement;
+      var statusMatch = currentFilter === 'ALL' || el.dataset.status === currentFilter;
+      var textMatch = verifySearchTerm === '' || (el.textContent || '').toLowerCase().includes(verifySearchTerm);
+      el.style.display = (statusMatch && textMatch) ? '' : 'none';
+    });
+    document.querySelectorAll('.collapsible').forEach(function(col) {
+      var colEl = col as HTMLElement;
+      var items = colEl.querySelectorAll('.verify-item');
+      var anyVisible = false;
+      items.forEach(function(item) { if ((item as HTMLElement).style.display !== 'none') anyVisible = true; });
+      colEl.style.display = anyVisible ? '' : 'none';
     });
   }
 
   window.showSection = function(name) {
-    document.querySelectorAll('.section-page').forEach(function(s) { s.style.display = 'none'; });
+    document.querySelectorAll('.section-page').forEach(function(s) { (s as HTMLElement).style.display = 'none'; });
     var el = document.getElementById('section-' + name);
     if (el) el.style.display = '';
     document.querySelectorAll('.nav a').forEach(function(a) {
@@ -396,6 +471,54 @@ const SEED = ${seedJson};
     content.classList.toggle('open');
     var arrow = header.querySelector('span:last-child');
     arrow.textContent = content.classList.contains('open') ? '▲' : '▼';
+  };
+
+  window.expandAll = function() {
+    document.querySelectorAll('.collapsible-content').forEach(function(c) {
+      c.classList.add('open');
+      var arrow = c.previousElementSibling && c.previousElementSibling.querySelector('span:last-child');
+      if (arrow) arrow.textContent = '▲';
+    });
+  };
+
+  window.collapseAll = function() {
+    document.querySelectorAll('.collapsible-content').forEach(function(c) {
+      c.classList.remove('open');
+      var arrow = c.previousElementSibling && c.previousElementSibling.querySelector('span:last-child');
+      if (arrow) arrow.textContent = '▼';
+    });
+  };
+
+  window.toggleDetails = function(btn) {
+    var wrap = btn.parentElement;
+    if (wrap.classList.contains('details-expanded')) {
+      wrap.classList.remove('details-expanded');
+      btn.textContent = '더 보기';
+    } else {
+      wrap.classList.add('details-expanded');
+      btn.textContent = '접기';
+    }
+  };
+
+  window.sortByRisk = function() {
+    var tbody = document.getElementById('checklist-body');
+    if (!tbody) return;
+    var rows = Array.from(tbody.querySelectorAll('tr'));
+    if (riskSortDir !== 'desc') {
+      rows.sort(function(a, b) { return parseInt((b.cells[3] as HTMLTableCellElement).textContent || '0') - parseInt((a.cells[3] as HTMLTableCellElement).textContent || '0'); });
+      riskSortDir = 'desc';
+    } else {
+      rows.sort(function(a, b) { return parseInt((a.cells[3] as HTMLTableCellElement).textContent || '0') - parseInt((b.cells[3] as HTMLTableCellElement).textContent || '0'); });
+      riskSortDir = 'asc';
+    }
+    rows.forEach(function(r) { tbody.appendChild(r); });
+    var th = document.getElementById('risk-th');
+    if (th) {
+      th.classList.remove('sort-asc', 'sort-desc');
+      th.classList.add('sort-' + riskSortDir);
+      var arrow = th.querySelector('.sort-arrow');
+      if (arrow) arrow.textContent = riskSortDir === 'desc' ? '↓' : '↑';
+    }
   };
 
   render();

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // ── Chaos Lab CLI — Main Orchestrator ──
 
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import chalk from 'chalk';
 import ora from 'ora';
@@ -21,13 +22,44 @@ import { generateHtmlReport } from '../web/html-generator.js';
 import type { Report, AutoFixResult } from '../core/types.js';
 
 async function main() {
+  process.on('SIGINT', () => {
+    console.error('\n중단되었습니다 (SIGINT).');
+    process.exit(130);
+  });
+
   const args = process.argv.slice(2);
+
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log(`chaos-lab — AI 에이전트 Pre-flight Check
+
+사용법: chaos-lab [옵션] "<작업 설명>"
+
+옵션:
+  --quick    Quick Mode (Auto-fix 실행 건너뜀)
+  --help     이 도움말 표시
+  --version  버전 표시
+
+예시:
+  chaos-lab "밤새 크롤링 돌려도 되나?"
+  chaos-lab --quick "AWS Lambda 배포 파이프라인"`);
+    process.exit(0);
+  }
+
+  if (args.includes('--version') || args.includes('-v')) {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    const pkgPath = join(__dirname, '../../package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+    console.log(pkg.version);
+    process.exit(0);
+  }
+
   const isQuickMode = args.includes('--quick');
   const prompt = args.filter(a => a !== '--quick').join(' ').trim();
 
   if (!prompt) {
-    console.log(chalk.red('사용법: chaos-lab [--quick] "<작업 설명>"'));
-    console.log(chalk.gray('예시: chaos-lab --quick "Google Sheets에 정리된 500개 스타트업 웹사이트를 밤새 크롤링"'));
+    console.error(chalk.red('사용법: chaos-lab [--quick] "<작업 설명>"'));
+    console.error(chalk.gray('예시: chaos-lab --quick "Google Sheets에 정리된 500개 스타트업 웹사이트를 밤새 크롤링"'));
     process.exit(1);
   }
 
@@ -35,7 +67,8 @@ async function main() {
 
   // Create run directory
   const now = new Date();
-  const timestamp = now.toISOString().replace(/[-:T]/g, '').replace(/\..+/, '').replace(/(\d{8})(\d{6})/, '$1-$2');
+  const ms = String(now.getMilliseconds()).padStart(3, '0');
+  const timestamp = now.toISOString().replace(/[-:T]/g, '').replace(/\..+/, '').replace(/(\d{8})(\d{6})/, '$1-$2') + '-' + ms;
   const runDir = join(process.cwd(), '.chaos-lab', `run-${timestamp}`);
   mkdirSync(runDir, { recursive: true });
 
@@ -189,9 +222,13 @@ async function main() {
   }
 
   console.log('');
+
+  if (verdict.status === 'NOT_READY') {
+    process.exit(2);
+  }
 }
 
 main().catch(err => {
-  console.error(chalk.red('에러 발생:'), err);
+  console.error(chalk.red('에러 발생:'), err instanceof Error ? err.message : String(err));
   process.exit(1);
 });

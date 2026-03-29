@@ -59,6 +59,10 @@ export const DANGEROUS_PATTERNS = [
   /mkfs\./,
   /dd\s+if=/,
   /:\(\)\s*\{/,
+  /kill\s+-9/,
+  /\|\s*(ba)?sh/,
+  /\beval\b/,
+  /curl\s.*\|\s*(ba)?sh/,
 ];
 
 // Failure keyword patterns for result interpretation
