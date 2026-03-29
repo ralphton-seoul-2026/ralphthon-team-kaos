@@ -72,9 +72,17 @@ function getActiveCategories(seed: Seed): Set<CategoryCode> {
   }
 
   // Build/test keywords
-  if (/build|test|lint|deploy|next\.?js|react|빌드|테스트|배포/i.test(taskLower) ||
-      /vercel|firebase/i.test(serviceNames)) {
+  if (/build|test|lint|deploy|next\.?js|react|빌드|테스트|배포|webhook|연동|백엔드|캐시|cache|최적화/i.test(taskLower) ||
+      /vercel|firebase|stripe|redis/i.test(serviceNames)) {
     active.add('BT');
+  }
+
+  // Cost-sensitive services (paid APIs, SMS, email sending)
+  const costServicePattern = /openai|anthropic|claude|gpt|twilio|sendgrid|stripe|airtable/i;
+  if (/비용|과금|유료|sms|발송|이메일.*발송|api\s*비용|api\s*호출/i.test(taskLower) ||
+      costServicePattern.test(serviceNames) ||
+      costServicePattern.test(taskLower)) {
+    active.add('COST');
   }
 
   // Docker keywords
