@@ -3,9 +3,9 @@
 import type { Report, Seed, ChecklistItem } from '../core/types.js';
 
 export function generateHtmlTemplate(report: Report, checklist: ChecklistItem[], seed: Seed): string {
-  const reportJson = JSON.stringify(report).replace(/</g, '\u003c');
-  const checklistJson = JSON.stringify(checklist).replace(/</g, '\u003c');
-  const seedJson = JSON.stringify(seed).replace(/</g, '\u003c');
+  const reportJson = JSON.stringify(report).replace(/</g, '\\u003c');
+  const checklistJson = JSON.stringify(checklist).replace(/</g, '\\u003c');
+  const seedJson = JSON.stringify(seed).replace(/</g, '\\u003c');
 
   return `<!DOCTYPE html>
 <html lang="ko">
