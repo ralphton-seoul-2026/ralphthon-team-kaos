@@ -36,12 +36,14 @@ async function main() {
 
 옵션:
   --quick    Quick Mode (Auto-fix 실행 건너뜀)
+  --deep     Deep Mode (AI 분석으로 고품질 Seed 생성, Claude CLI 필요)
   --help     이 도움말 표시
   --version  버전 표시
 
 예시:
   chaos-lab "밤새 크롤링 돌려도 되나?"
-  chaos-lab --quick "AWS Lambda 배포 파이프라인"`);
+  chaos-lab --quick "AWS Lambda 배포 파이프라인"
+  chaos-lab --deep "Google Sheets 데이터를 Notion에 동기화"`);
     process.exit(0);
   }
 
@@ -55,10 +57,11 @@ async function main() {
   }
 
   const isQuickMode = args.includes('--quick');
-  const prompt = args.filter(a => a !== '--quick').join(' ').trim();
+  const isDeepMode = args.includes('--deep');
+  const prompt = args.filter(a => a !== '--quick' && a !== '--deep').join(' ').trim();
 
   if (!prompt) {
-    console.error(chalk.red('사용법: chaos-lab [--quick] "<작업 설명>"'));
+    console.error(chalk.red('사용법: chaos-lab [--quick] [--deep] "<작업 설명>"'));
     console.error(chalk.gray('예시: chaos-lab --quick "Google Sheets에 정리된 500개 스타트업 웹사이트를 밤새 크롤링"'));
     process.exit(1);
   }
@@ -74,12 +77,22 @@ async function main() {
 
   console.log(chalk.bold('\n🧪 Chaos Lab — Pre-flight Check\n'));
   console.log(chalk.gray(`작업: ${prompt.slice(0, 80)}${prompt.length > 80 ? '...' : ''}`));
-  console.log(chalk.gray(`모드: ${isQuickMode ? 'Quick Mode' : 'Quick Mode (기본)'}`));
+  if (isDeepMode) {
+    console.log(chalk.cyan(`모드: Deep Mode (AI 분석)`));
+  } else {
+    console.log(chalk.gray(`모드: Quick Mode (키워드 매칭)`));
+  }
   console.log(chalk.gray(`출력: ${runDir}\n`));
 
   // ── Step 1: Seed Generation ──
   const seedSpinner = ora('Step 1: Seed 생성 중...').start();
-  const seed = generateSeed(prompt);
+  let seed;
+  if (isDeepMode) {
+    const { generateDeepSeed } = await import('../step1-refine/deep-seed-generator.js');
+    seed = await generateDeepSeed(prompt);
+  } else {
+    seed = generateSeed(prompt);
+  }
   const serviceCount = seed.external_services.length;
   const serviceNames = seed.external_services.map(s => s.name).join(', ');
   seedSpinner.succeed(
