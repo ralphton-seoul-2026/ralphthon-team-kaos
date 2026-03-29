@@ -75,6 +75,32 @@ function readJSON(filePath) {
   }
 }
 
+/**
+ * Parse estimated_duration string to hours.
+ * Supports formats: "8~24시간", "30분~1시간", "2~4시간", "3~6시간"
+ */
+function parseDurationToHours(durationStr) {
+  if (!durationStr) return null;
+
+  // "8~24시간" or "2~4시간"
+  const hourRange = durationStr.match(/(\d+)\s*[~\-]\s*(\d+)\s*시간/);
+  if (hourRange) return { min: parseInt(hourRange[1], 10), max: parseInt(hourRange[2], 10) };
+
+  // "30분~1시간"
+  const mixedRange = durationStr.match(/(\d+)\s*분\s*[~\-]\s*(\d+)\s*시간/);
+  if (mixedRange) return { min: parseInt(mixedRange[1], 10) / 60, max: parseInt(mixedRange[2], 10) };
+
+  // "N시간"
+  const singleHour = durationStr.match(/(\d+)\s*시간/);
+  if (singleHour) return { min: parseInt(singleHour[1], 10), max: parseInt(singleHour[1], 10) };
+
+  // "N분"
+  const singleMin = durationStr.match(/(\d+)\s*분/);
+  if (singleMin) return { min: parseInt(singleMin[1], 10) / 60, max: parseInt(singleMin[1], 10) / 60 };
+
+  return null;
+}
+
 // ── Build check ──
 log(`${BOLD}╔══════════════════════════════════════════════════════╗${RESET}`);
 log(`${BOLD}║  Chaos Lab — 전체 시나리오 검증 게이트 (${toRun.length}개)     ║${RESET}`);
@@ -153,9 +179,23 @@ for (const scenario of toRun) {
     fail('chaos-lab-report-*.md 없음');
   }
 
-  // 3. seed.json: service count
+  // 3. seed.json validation
   const seed = readJSON(resolve(runDir, 'seed.json'));
   if (seed) {
+    // 3a. Schema completeness check (PRD A-2-4)
+    const requiredSeedFields = [
+      'task_summary', 'ambiguity_score', 'external_services',
+      'local_dependencies', 'estimated_duration', 'failure_impact',
+      'environment_assumptions'
+    ];
+    const missingSeedFields = requiredSeedFields.filter(f => seed[f] === undefined || seed[f] === null);
+    if (missingSeedFields.length === 0) {
+      pass('seed.json 스키마 완전 (7개 필드)');
+    } else {
+      fail(`seed.json 필드 누락: ${missingSeedFields.join(', ')}`);
+    }
+
+    // 3b. Service count
     const services = seed.external_services || [];
     const svcCount = services.length;
     const { min, max } = scenario.expectedServices;
@@ -165,7 +205,7 @@ for (const scenario of toRun) {
       fail(`서비스 ${svcCount}개 (기대: ${min}~${max})`);
     }
 
-    // ambiguity check (optional)
+    // 3c. Ambiguity check (optional)
     if (scenario.expectedAmbiguity) {
       const amb = seed.ambiguity_score ?? 0;
       const { min: aMin, max: aMax } = scenario.expectedAmbiguity;
@@ -175,11 +215,27 @@ for (const scenario of toRun) {
         fail(`ambiguity_score ${amb} (기대: ${aMin}~${aMax})`);
       }
     }
+
+    // 3d. Expected duration check
+    if (scenario.expectedDuration) {
+      const parsed = parseDurationToHours(seed.estimated_duration);
+      if (parsed) {
+        const { minHours, maxHours } = scenario.expectedDuration;
+        // Check that the seed's duration range overlaps with expected range
+        if (parsed.max >= minHours && parsed.min <= maxHours) {
+          pass(`estimated_duration "${seed.estimated_duration}" (기대: ${minHours}~${maxHours}h)`);
+        } else {
+          fail(`estimated_duration "${seed.estimated_duration}" → ${parsed.min}~${parsed.max}h (기대: ${minHours}~${maxHours}h)`);
+        }
+      } else {
+        fail(`estimated_duration 파싱 실패: "${seed.estimated_duration}"`);
+      }
+    }
   } else {
     fail('seed.json 파싱 실패');
   }
 
-  // 4. checklist.json: bounds, forbidden/required categories
+  // 4. checklist.json validation
   const checklist = readJSON(resolve(runDir, 'checklist.json'));
   if (checklist) {
     const items = checklist.items || checklist || [];
@@ -192,7 +248,7 @@ for (const scenario of toRun) {
       fail(`체크리스트 ${itemCount}개 (기대: ${cMin}~${cMax})`);
     }
 
-    // Forbidden categories
+    // 4a. Forbidden categories
     for (const prefix of (scenario.forbiddenCategories || [])) {
       const found = items.filter(i => {
         const id = (i.item_id || '').toUpperCase();
@@ -205,7 +261,7 @@ for (const scenario of toRun) {
       }
     }
 
-    // Required categories
+    // 4b. Required categories
     for (const prefix of (scenario.requiredCategories || [])) {
       const found = items.filter(i => {
         const id = (i.item_id || '').toUpperCase();
@@ -227,7 +283,27 @@ for (const scenario of toRun) {
       }
     }
 
-    // Risk Score descending
+    // 4c. Required specific items (with CUSTOM fallback)
+    for (const itemId of (scenario.requiredItems || [])) {
+      const exactMatch = items.find(i => (i.item_id || '').toUpperCase() === itemId.toUpperCase());
+      if (exactMatch) {
+        pass(`${itemId} 항목 포함`);
+      } else {
+        // Fallback: check CUSTOM items with same category that cover the same concern
+        const itemCategory = itemId.split('-')[0]; // e.g., AUTH-03 -> AUTH
+        const customFallback = items.find(i =>
+          (i.item_id || '').startsWith('CUSTOM') &&
+          (i.category || '').toUpperCase() === itemCategory.toUpperCase()
+        );
+        if (customFallback) {
+          pass(`${itemId} (CUSTOM 대체: ${customFallback.item_id}) 포함`);
+        } else {
+          fail(`${itemId} 항목 없음 (필수)`);
+        }
+      }
+    }
+
+    // 4d. Risk Score descending
     const riskScores = items
       .map(i => (i.impact || 1) * (i.likelihood || 1))
       .filter(s => !isNaN(s));
@@ -246,9 +322,10 @@ for (const scenario of toRun) {
     fail('checklist.json 파싱 실패');
   }
 
-  // 5. report.json: no "수동 확인이 필요합니다"
+  // 5. report.json validation
   const report = readJSON(resolve(runDir, 'report.json'));
   if (report) {
+    // 5a. No "수동 확인이 필요합니다"
     const actions = report.action_plan || report.actions || [];
     const badActions = actions.filter(a => {
       const desc = JSON.stringify(a);
@@ -259,18 +336,43 @@ for (const scenario of toRun) {
     } else {
       fail(`Action Plan에 '수동 확인' 문구 ${badActions.length}건`);
     }
+
+    // 5b. Verdict field validation (PRD A-6-1~3)
+    // verdict can be a string or an object with .status
+    const rawVerdict = typeof report.verdict === 'object' && report.verdict !== null
+      ? report.verdict.status
+      : report.verdict;
+    const normalizedVerdict = (rawVerdict || '').replace(/_/g, ' ');
+    const validVerdicts = ['READY', 'READY WITH CAUTION', 'NOT READY'];
+    if (normalizedVerdict && validVerdicts.includes(normalizedVerdict)) {
+      pass(`Verdict: "${normalizedVerdict}" (유효)`);
+    } else {
+      fail(`Verdict 필드 누락 또는 잘못됨: "${rawVerdict}" (기대: ${validVerdicts.join(' / ')})`);
+    }
   } else {
     fail('report.json 파싱 실패');
   }
 
-  // 6. report.html size
+  // 6. report.html validation
   const htmlPath = resolve(runDir, 'report.html');
   if (existsSync(htmlPath)) {
-    const size = statSync(htmlPath).size;
+    const htmlContent = readFileSync(htmlPath, 'utf-8');
+    const size = Buffer.byteLength(htmlContent, 'utf-8');
+
+    // 6a. Size check
     if (size > 1000) {
       pass(`report.html ${size} bytes`);
     } else {
       fail(`report.html ${size} bytes (>1KB 필요)`);
+    }
+
+    // 6b. No external dependencies (PRD B-1-3)
+    const externalPattern = /<(?:link|script)[^>]+(?:href|src)\s*=\s*["']https?:\/\//gi;
+    const externalMatches = htmlContent.match(externalPattern);
+    if (!externalMatches || externalMatches.length === 0) {
+      pass('report.html 외부 의존성 없음');
+    } else {
+      fail(`report.html 외부 의존성 ${externalMatches.length}건: ${externalMatches.slice(0, 2).join(', ')}`);
     }
   }
 

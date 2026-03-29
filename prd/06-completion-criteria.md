@@ -139,12 +139,15 @@ node dist/cli/index.js "Google Sheets에 정리된 500개 스타트업 웹사이
 
 **기대 결과:**
 1. Step 1: 서비스 3개 감지 (Google Sheets, Target Websites, Notion)
-2. Step 2: Docker/DB 관련 항목 미포함 (사용하지 않으므로)
-3. Step 2: Google/Notion 인증 관련 항목 포함
-4. Step 3: 각 항목 검증 실행
-5. Step 5: Action Plan에 구체적 해결 명령어 포함 ("수동 확인이 필요합니다" 금지)
-6. Step 5: 리포트에 Seed 컨텍스트 연결 (왜 이 검증이 필요한지 설명)
-7. 출력 파일 6종 생성
+2. Step 1: estimated_duration 8~24시간 (밤새 키워드)
+3. Step 2: Docker/DB 관련 항목 미포함 (사용하지 않으므로)
+4. Step 2: Google/Notion 인증 관련 항목 포함 (AUTH-04, AUTH-08 또는 CUSTOM 대체)
+5. Step 2: 장시간 작업 → HW, OS, COST, MON 카테고리 활성화
+6. Step 3: 각 항목 검증 실행
+7. Step 5: Action Plan에 구체적 해결 명령어 포함 ("수동 확인이 필요합니다" 금지)
+8. Step 5: Verdict 값 유효 (READY / READY WITH CAUTION / NOT READY)
+9. Step 5: 리포트에 Seed 컨텍스트 연결 (왜 이 검증이 필요한지 설명)
+10. 출력 파일 6종 생성
 
 **검증 방법 (로그 기반):**
 - 로그에 "서비스 N개 감지" 출력 확인
@@ -370,9 +373,10 @@ ls -la .chaos-lab/run-*/
 
 **기대 결과:**
 - 서비스 감지: 0개
-- 체크리스트 최소 10개 (바운드 하한)
-- AUTH/NET/RT 필수 카테고리만 포함
-- ambiguity_score 높음 (0.6)
+- 체크리스트 최소 10개, 최대 20개 (바운드 하한)
+- AUTH/NET/RT 필수 카테고리 반드시 포함 (PRD A-3-2 항상 포함 규칙)
+- DB/DOCKER/COST/HW 카테고리 미포함 (오탐 방지)
+- ambiguity_score 높음 (0.5~1.0)
 
 ### 시나리오 24: 복합 서비스 (5개 이상)
 
@@ -438,8 +442,8 @@ ls -la .chaos-lab/run-*/
 
 **기대 결과:**
 - 서비스 감지: AWS, OpenAI, PostgreSQL, Slack, Notion (5개)
-- 체크리스트 45~50개 (상한 근접)
-- HW/OS/COST/MON 전부 활성화 (밤새)
+- 체크리스트 40~50개 (상한 근접)
+- HW/OS/COST/MON/AUTH/DB 전부 활성화 (밤새 + 멀티서비스)
 - estimated_duration: 8~24시간
 - AUTH likelihood 최대 boost
 - rate_limit_concern: true (OpenAI)
@@ -458,6 +462,12 @@ ls -la .chaos-lab/run-*/
 5. **액셔너블 리포트**: Action Plan에 "수동 확인이 필요합니다" 대신 구체적 명령어
 6. **출력 파일 6종**: seed.json, checklist.json, results.json, report.json, report.html, chaos-lab-report-*.md
 7. **빌드 에러 0**: `npm run build` 성공
+8. **seed.json 스키마 완전성**: task_summary, ambiguity_score, external_services, local_dependencies, estimated_duration, failure_impact, environment_assumptions 7개 필드 필수
+9. **Verdict 유효성**: report.json의 verdict 값이 READY / READY WITH CAUTION / NOT READY 중 하나
+10. **report.html 외부 의존성 0**: `<link href="http` 또는 `<script src="http` 패턴 없음
+11. **필수 카테고리 검증**: 시나리오별 requiredCategories에 명시된 카테고리가 체크리스트에 포함
+12. **필수 항목 검증**: 시나리오별 requiredItems에 명시된 항목(또는 동일 카테고리의 CUSTOM 대체 항목)이 포함
+13. **소요시간 추정 검증**: 장시간 작업 시나리오(밤새, N시간 등)의 estimated_duration이 기대 범위와 일치
 
 ---
 

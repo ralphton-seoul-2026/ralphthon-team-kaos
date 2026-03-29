@@ -5,9 +5,10 @@
     "prompt": "Google Sheets에 정리된 500개 스타트업 웹사이트를 밤새 크롤링해서 회사명, 산업군, 최근 투자 여부를 정리하고 Notion 데이터베이스에 저장해줘",
     "expectedServices": { "min": 3, "max": 5 },
     "forbiddenCategories": ["DB-", "DOCKER"],
-    "requiredCategories": ["AUTH", "NET"],
-    "requiredItems": [],
-    "checklistBounds": { "min": 10, "max": 50 }
+    "requiredCategories": ["AUTH", "NET", "HW", "OS", "COST", "MON"],
+    "requiredItems": ["AUTH-04", "AUTH-08"],
+    "checklistBounds": { "min": 10, "max": 50 },
+    "expectedDuration": { "minHours": 8, "maxHours": 24 }
   },
   {
     "id": 2,
@@ -15,7 +16,7 @@
     "prompt": "크롬MCP활용해서 뉴스 데이터 수집 후 노션페이지에 적재 + 최종적으로 이메일로 송신하는 자동화 시스템 구현하려고 해",
     "expectedServices": { "min": 2, "max": 5 },
     "forbiddenCategories": ["DB-", "DOCKER"],
-    "requiredCategories": [],
+    "requiredCategories": ["CC"],
     "requiredItems": [],
     "checklistBounds": { "min": 10, "max": 50 }
   },
@@ -36,7 +37,7 @@
     "expectedServices": { "min": 2, "max": 5 },
     "forbiddenCategories": ["DOCKER"],
     "requiredCategories": ["DB", "AUTH"],
-    "requiredItems": [],
+    "requiredItems": ["AUTH-05"],
     "checklistBounds": { "min": 10, "max": 50 }
   },
   {
@@ -46,7 +47,7 @@
     "expectedServices": { "min": 2, "max": 3 },
     "forbiddenCategories": ["DB-"],
     "requiredCategories": ["GIT", "AUTH"],
-    "requiredItems": [],
+    "requiredItems": ["AUTH-03"],
     "checklistBounds": { "min": 10, "max": 50 }
   },
   {
@@ -55,9 +56,10 @@
     "prompt": "밤새 네이버 뉴스 크롤링해서 1000건 수집하고 MongoDB에 저장해줘",
     "expectedServices": { "min": 2, "max": 4 },
     "forbiddenCategories": [],
-    "requiredCategories": ["HW", "DB"],
+    "requiredCategories": ["HW", "DB", "OS", "COST", "MON"],
     "requiredItems": [],
-    "checklistBounds": { "min": 10, "max": 50 }
+    "checklistBounds": { "min": 10, "max": 50 },
+    "expectedDuration": { "minHours": 8, "maxHours": 24 }
   },
   {
     "id": 7,
@@ -66,7 +68,7 @@
     "expectedServices": { "min": 2, "max": 4 },
     "forbiddenCategories": [],
     "requiredCategories": ["DB", "HW"],
-    "requiredItems": [],
+    "requiredItems": ["RT-11"],
     "checklistBounds": { "min": 10, "max": 50 }
   },
   {
@@ -76,7 +78,7 @@
     "expectedServices": { "min": 1, "max": 3 },
     "forbiddenCategories": [],
     "requiredCategories": ["AUTH", "COST"],
-    "requiredItems": [],
+    "requiredItems": ["AUTH-02"],
     "checklistBounds": { "min": 10, "max": 50 }
   },
   {
@@ -85,8 +87,8 @@
     "prompt": "Firebase Authentication + Firestore 연동하는 React 대시보드 만들어줘",
     "expectedServices": { "min": 1, "max": 3 },
     "forbiddenCategories": [],
-    "requiredCategories": ["AUTH", "BT"],
-    "requiredItems": [],
+    "requiredCategories": ["AUTH", "BT", "RT"],
+    "requiredItems": ["AUTH-04"],
     "checklistBounds": { "min": 10, "max": 50 }
   },
   {
@@ -95,8 +97,8 @@
     "prompt": "현재 프로젝트를 GitHub에 push하고 README 정리해줘",
     "expectedServices": { "min": 1, "max": 2 },
     "forbiddenCategories": ["DB-", "HW-", "COST-"],
-    "requiredCategories": ["GIT"],
-    "requiredItems": [],
+    "requiredCategories": ["GIT", "AUTH"],
+    "requiredItems": ["AUTH-03"],
     "checklistBounds": { "min": 10, "max": 30 }
   },
   {
@@ -105,7 +107,7 @@
     "prompt": "Supabase로 인증 + 데이터베이스 + 스토리지 연동하는 Next.js 앱 배포",
     "expectedServices": { "min": 1, "max": 3 },
     "forbiddenCategories": [],
-    "requiredCategories": ["DB", "BT"],
+    "requiredCategories": ["DB", "BT", "RT"],
     "requiredItems": [],
     "checklistBounds": { "min": 10, "max": 50 }
   },
@@ -126,7 +128,7 @@
     "expectedServices": { "min": 2, "max": 4 },
     "forbiddenCategories": [],
     "requiredCategories": ["AUTH", "COST"],
-    "requiredItems": [],
+    "requiredItems": ["AUTH-01", "AUTH-08"],
     "checklistBounds": { "min": 10, "max": 50 }
   },
   {
@@ -135,7 +137,7 @@
     "prompt": "Selenium으로 우리 웹사이트 E2E 테스트 자동화해줘",
     "expectedServices": { "min": 1, "max": 3 },
     "forbiddenCategories": [],
-    "requiredCategories": ["BT"],
+    "requiredCategories": ["BT", "RT"],
     "requiredItems": [],
     "checklistBounds": { "min": 10, "max": 50 }
   },
@@ -157,7 +159,8 @@
     "forbiddenCategories": [],
     "requiredCategories": ["DB", "HW"],
     "requiredItems": [],
-    "checklistBounds": { "min": 10, "max": 50 }
+    "checklistBounds": { "min": 10, "max": 50 },
+    "expectedDuration": { "minHours": 2, "maxHours": 24 }
   },
   {
     "id": 17,
@@ -195,8 +198,8 @@
     "prompt": "Claude Code용 커스텀 MCP 서버 만들어서 우리 내부 API 연결",
     "expectedServices": { "min": 0, "max": 3 },
     "forbiddenCategories": [],
-    "requiredCategories": ["NET"],
-    "requiredItems": [],
+    "requiredCategories": ["CC", "NET", "RT"],
+    "requiredItems": ["AUTH-10"],
     "checklistBounds": { "min": 10, "max": 50 }
   },
   {
@@ -205,7 +208,7 @@
     "prompt": "Playwright로 JavaScript 렌더링되는 사이트 100페이지 크롤링",
     "expectedServices": { "min": 1, "max": 3 },
     "forbiddenCategories": [],
-    "requiredCategories": [],
+    "requiredCategories": ["RT"],
     "requiredItems": [],
     "checklistBounds": { "min": 10, "max": 50 }
   },
@@ -225,7 +228,7 @@
     "prompt": "간단한 스크립트 실행",
     "expectedServices": { "min": 0, "max": 0 },
     "forbiddenCategories": ["DB-", "DOCKER", "COST-", "HW-"],
-    "requiredCategories": ["RT"],
+    "requiredCategories": ["AUTH", "NET", "RT"],
     "requiredItems": [],
     "checklistBounds": { "min": 10, "max": 20 },
     "expectedAmbiguity": { "min": 0.5, "max": 1.0 }
@@ -247,7 +250,7 @@
     "expectedServices": { "min": 2, "max": 4 },
     "forbiddenCategories": ["DB-", "DOCKER"],
     "requiredCategories": ["AUTH"],
-    "requiredItems": [],
+    "requiredItems": ["AUTH-04"],
     "checklistBounds": { "min": 10, "max": 50 }
   },
   {
@@ -267,7 +270,7 @@
     "expectedServices": { "min": 1, "max": 3 },
     "forbiddenCategories": [],
     "requiredCategories": ["AUTH"],
-    "requiredItems": [],
+    "requiredItems": ["AUTH-08"],
     "checklistBounds": { "min": 10, "max": 50 }
   },
   {
@@ -277,7 +280,7 @@
     "expectedServices": { "min": 2, "max": 4 },
     "forbiddenCategories": [],
     "requiredCategories": ["GIT", "BT", "AUTH"],
-    "requiredItems": [],
+    "requiredItems": ["AUTH-03"],
     "checklistBounds": { "min": 10, "max": 50 }
   },
   {
@@ -296,8 +299,9 @@
     "prompt": "밤새 AWS Lambda로 S3 버킷의 이미지 10000장을 OpenAI Vision으로 분석하고, 결과를 PostgreSQL에 저장한 후, Slack으로 진행 상황 알림을 보내고, 최종 보고서를 Notion에 작성해줘",
     "expectedServices": { "min": 5, "max": 8 },
     "forbiddenCategories": [],
-    "requiredCategories": ["HW", "COST", "AUTH", "DB"],
+    "requiredCategories": ["HW", "COST", "AUTH", "DB", "OS", "MON"],
     "requiredItems": [],
-    "checklistBounds": { "min": 40, "max": 50 }
+    "checklistBounds": { "min": 40, "max": 50 },
+    "expectedDuration": { "minHours": 8, "maxHours": 24 }
   }
 ]
