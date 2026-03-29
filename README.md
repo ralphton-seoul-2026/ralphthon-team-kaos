@@ -64,8 +64,9 @@ bash scripts/install.sh
     │
     ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│ Step 1: Seed 생성                                                │
-│ 키워드 매칭으로 외부 서비스 25종 + 로컬 의존성 감지               │
+│ Step 1: Seed 생성 (Quick Mode / Deep Mode)                        │
+│ Quick: 키워드 매칭으로 외부 서비스 25종 + 로컬 의존성 감지         │
+│ Deep: Ouroboros 소크라테스 문답으로 암묵적 요구사항까지 추출        │
 │ 소요시간·위험도·환경 가정까지 자동 추정 → seed.json               │
 ├──────────────────────────────────────────────────────────────────┤
 │ Step 2: 체크리스트 생성                                           │
@@ -109,6 +110,20 @@ bash scripts/install.sh
 | 모니터링 | MON | 4 | 장시간 태스크 (≥2시간) | 로그 수집, 메트릭 익스포트, 알림, 헬스체크 |
 
 **동적 체크리스트 생성**: Layer 1(마스터 100개에서 선택) + Layer 2(서비스별 커스텀 생성) → 중복 제거 후 Risk Score 정렬 (MIN 10 ~ MAX 50개)
+
+### Risk Score 산출 공식
+
+```
+Risk Score = Impact(1~5) × Likelihood(1~5)   →   범위: 1 ~ 25
+```
+
+| 보정 규칙 | 조건 | 적용 |
+|----------|------|------|
+| AUTH +1 | 외부 서비스 ≥ 2개 감지 | `likelihood = min(5, likelihood + 1)` |
+| HW +1 | 장시간 태스크 (≥2시간, "밤새", "overnight") | `likelihood = min(5, likelihood + 1)` |
+| NET +1 | Rate Limit 우려 서비스 감지 | `likelihood = min(5, likelihood + 1)` |
+
+체크리스트 항목은 Risk Score **내림차순**으로 정렬되어 가장 위험한 항목부터 검증합니다.
 
 ## Auto-fix
 
