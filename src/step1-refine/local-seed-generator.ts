@@ -49,7 +49,7 @@ const SERVICE_PATTERNS: ServicePattern[] = [
     service: { name: 'Redis', auth_type: 'Connection String', operations: ['get', 'set'] },
   },
   {
-    patterns: [/크롤링/i, /scraping/i, /crawl/i, /스크래핑/i, /스크레이핑/i],
+    patterns: [/크롤링/i, /scraping/i, /crawl/i, /스크래핑/i, /스크레이핑/i, /크롬/i, /chrome/i, /수집/i, /긁어/i, /파싱/i, /parsing/i],
     service: { name: 'Target Websites', auth_type: 'none', operations: ['HTTP GET'], rate_limit_concern: true },
   },
   {
