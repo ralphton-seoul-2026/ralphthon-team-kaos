@@ -411,7 +411,7 @@ const SEED = ${seedJson};
     var searchBox = document.getElementById('checklist-search');
     if (searchBox) {
       searchBox.addEventListener('input', function(e) {
-        searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
+        searchTerm = e.target.value.toLowerCase();
         filterChecklist();
       });
     }
@@ -419,7 +419,7 @@ const SEED = ${seedJson};
     var verifySearch = document.getElementById('verify-search');
     if (verifySearch) {
       verifySearch.addEventListener('input', function(e) {
-        verifySearchTerm = (e.target as HTMLInputElement).value.toLowerCase();
+        verifySearchTerm = e.target.value.toLowerCase();
         filterVerify();
       });
     }
@@ -427,8 +427,8 @@ const SEED = ${seedJson};
     document.querySelectorAll('.filter-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
         document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
-        (btn as HTMLElement).classList.add('active');
-        currentFilter = (btn as HTMLElement).dataset.filter || 'ALL';
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter || 'ALL';
         filterVerify();
       });
     });
@@ -436,29 +436,29 @@ const SEED = ${seedJson};
 
   function filterChecklist() {
     document.querySelectorAll('.checklist-row').forEach(function(row) {
-      var text = (row as HTMLElement).textContent.toLowerCase();
-      (row as HTMLElement).style.display = text.includes(searchTerm) ? '' : 'none';
+      var text = row.textContent.toLowerCase();
+      row.style.display = text.includes(searchTerm) ? '' : 'none';
     });
   }
 
   function filterVerify() {
     document.querySelectorAll('.verify-item').forEach(function(item) {
-      var el = item as HTMLElement;
+      var el = item;
       var statusMatch = currentFilter === 'ALL' || el.dataset.status === currentFilter;
       var textMatch = verifySearchTerm === '' || (el.textContent || '').toLowerCase().includes(verifySearchTerm);
       el.style.display = (statusMatch && textMatch) ? '' : 'none';
     });
     document.querySelectorAll('.collapsible').forEach(function(col) {
-      var colEl = col as HTMLElement;
+      var colEl = col;
       var items = colEl.querySelectorAll('.verify-item');
       var anyVisible = false;
-      items.forEach(function(item) { if ((item as HTMLElement).style.display !== 'none') anyVisible = true; });
+      items.forEach(function(item) { if (item.style.display !== 'none') anyVisible = true; });
       colEl.style.display = anyVisible ? '' : 'none';
     });
   }
 
   window.showSection = function(name) {
-    document.querySelectorAll('.section-page').forEach(function(s) { (s as HTMLElement).style.display = 'none'; });
+    document.querySelectorAll('.section-page').forEach(function(s) { s.style.display = 'none'; });
     var el = document.getElementById('section-' + name);
     if (el) el.style.display = '';
     document.querySelectorAll('.nav a').forEach(function(a) {
@@ -505,10 +505,10 @@ const SEED = ${seedJson};
     if (!tbody) return;
     var rows = Array.from(tbody.querySelectorAll('tr'));
     if (riskSortDir !== 'desc') {
-      rows.sort(function(a, b) { return parseInt((b.cells[3] as HTMLTableCellElement).textContent || '0') - parseInt((a.cells[3] as HTMLTableCellElement).textContent || '0'); });
+      rows.sort(function(a, b) { return parseInt(b.cells[3].textContent || '0') - parseInt(a.cells[3].textContent || '0'); });
       riskSortDir = 'desc';
     } else {
-      rows.sort(function(a, b) { return parseInt((a.cells[3] as HTMLTableCellElement).textContent || '0') - parseInt((b.cells[3] as HTMLTableCellElement).textContent || '0'); });
+      rows.sort(function(a, b) { return parseInt(a.cells[3].textContent || '0') - parseInt(b.cells[3].textContent || '0'); });
       riskSortDir = 'asc';
     }
     rows.forEach(function(r) { tbody.appendChild(r); });
