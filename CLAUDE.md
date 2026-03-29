@@ -78,43 +78,39 @@ src/
 **자동 검증 스크립트가 exit 0을 반환할 때까지 구현을 반복하라.**
 **에이전트 자기 판단으로 "통과"를 선언하는 것은 금지된다. 반드시 스크립트 exit code로 판정한다.**
 
-### 검증 명령어 (단일 명령어로 전체 검증):
+### 검증 명령어 (단일 명령어로 전체 30개 시나리오 검증):
 ```bash
 npm run validate
 ```
 
 ### 개별 시나리오 검증 (디버깅용):
 ```bash
-npm run validate:scenario1   # 크롤링+Notion (외부 서비스 다수)
-npm run validate:scenario3   # 단순 Python (서비스 0개 — negative test)
-npm run validate:scenario23  # 최소 입력 (엣지 케이스)
+npm run validate:scenario -- 1       # 시나리오 1만
+npm run validate:scenario -- 1,3,23  # 복수 시나리오
 ```
+
+### 시나리오 정의:
+- `scripts/scenarios.json`에 30개 시나리오 정의 (prd/06-completion-criteria.md 기반)
+- `scripts/validate-engine.mjs`가 프로그래밍적으로 각 시나리오를 실행 + 검증
+- 각 시나리오별로 서비스 감지 수, 필수/금지 카테고리, 체크리스트 바운드, 오탐 방지 등을 자동 판정
 
 ### 통과 기준:
 1. `npm run build` exit code 0
-2. `npm run validate` exit code 0 (3개 시나리오 모두 통과)
+2. `npm run validate` exit code 0 (**30개 시나리오 모두 통과**)
 3. 위 두 명령 모두 exit 0이 아니면 절대 "완료" 선언 금지
-
-### 시나리오별 검증 내용:
-
-| 시나리오 | 핵심 검증 | 목적 |
-|---------|----------|------|
-| 시나리오 1 (크롤링+Notion) | 서비스 ≥3개, Docker/DB 오탐 없음, 파일 6종, 액셔너블 Action Plan | 정상 경로 (happy path) |
-| 시나리오 3 (단순 Python) | 서비스 0개, Docker 없음, 체크리스트 ≤25개 | 오탐 방지 (negative test) |
-| 시나리오 23 (최소 입력) | 서비스 0개, ambiguity ≥0.5, DB/Docker/COST/HW 없음, 체크리스트 ≤20개 | 엣지 케이스 |
 
 ### Loop 종료 금지 조건 (절대 위반 불가):
 - `npm run validate`를 실행하지 않고 "완료" 선언 **금지**
 - 검증 스크립트 stdout에 "FAIL"이 포함되면 종료 **불가**
 - `npm run build`가 실패하면 종료 **불가**
-- **검증 스크립트(`scripts/validate-*.sh`)를 수정하여 통과시키는 것 금지**
+- **검증 스크립트(`scripts/validate-engine.mjs`, `scripts/scenarios.json`)를 수정하여 통과시키는 것 금지**
 - 에이전트가 로그를 읽고 자기 판단으로 "통과했다"고 선언하는 것 **금지** — exit code만이 판정 기준
 
 ### 미통과 시:
 - `npm run validate` 출력에서 ❌ FAIL 항목을 확인
-- 해당 실패 원인을 분석하고 **소스 코드**(scripts/validate-*.sh가 아닌)를 수정
+- 해당 실패 원인을 분석하고 **소스 코드**(scripts/ 가 아닌 src/)를 수정
 - 수정 후 `npm run build && npm run validate` 재실행
-- 모든 시나리오가 통과할 때까지 이 루프를 반복
+- 30개 시나리오가 모두 통과할 때까지 이 루프를 반복
 
 ## 자율 실행 규칙 (Autonomous Execution Rules)
 
@@ -132,15 +128,18 @@ npm run validate:scenario23  # 최소 입력 (엣지 케이스)
 **자동 검증 스크립트 기반 — 수동 판정 금지**
 
 ```bash
-npm run validate        # 전체 검증 (3개 시나리오)
+npm run validate                     # 전체 30개 시나리오 검증
+npm run validate:scenario -- 1,3     # 특정 시나리오만 디버깅
 ```
 
-검증 스크립트가 프로그래밍적으로 다음을 확인한다:
+검증 엔진(`scripts/validate-engine.mjs`)이 각 시나리오마다 다음을 자동 검증한다:
 1. 파일 6종 존재 (seed.json, checklist.json, results.json, report.json, report.html, chaos-lab-report-*.md)
-2. seed.json: 서비스 감지 수 정확성 (시나리오별 기대값)
-3. checklist.json: 오탐 방지 (Docker/DB 미포함 여부), 바운드 10~50
+2. seed.json: 서비스 감지 수 (시나리오별 기대 범위)
+3. checklist.json: 오탐 방지 (금지 카테고리), 필수 카테고리, 바운드, Risk Score 정렬
 4. report.json: Action Plan에 "수동 확인이 필요합니다" 금지 문구 없음
 5. report.html: 크기 > 1KB
 6. npm run build exit code 0
 
-**판정 기준: `npm run validate` exit code 0 = 통과, 그 외 = 실패**
+시나리오 정의는 `scripts/scenarios.json`에 30개 전부 포함.
+
+**판정 기준: `npm run validate` exit code 0 = 통과 (30개 전부), 그 외 = 실패**
